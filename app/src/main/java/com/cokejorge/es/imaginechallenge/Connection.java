@@ -23,7 +23,7 @@ import java.util.Collections;
 public class Connection {
 
     //TODO: LANZA EL SERVIDOR E INSERTA LA URL AQUI (terminado en "/"):
-    public static String url = "http://geomeserver-jorgecoke.rhcloud.com/";
+    public static String url = "https://agariorlserver-jorgecoke.rhcloud.com/";
 
     public static RestTemplate rest;
     public static URI uri;

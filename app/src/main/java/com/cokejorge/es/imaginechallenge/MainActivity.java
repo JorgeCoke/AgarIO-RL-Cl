@@ -4,6 +4,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -21,13 +24,18 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MainActivity extends AppCompatActivity
@@ -35,33 +43,38 @@ public class MainActivity extends AppCompatActivity
 
     private GoogleMap mMap;
     LocationManager locationManager;
+    CameraPosition cameraPosition;
+    Circle circle = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Action", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(MainActivity.this, "Has pulsado el Snackbar! :D", Toast.LENGTH_SHORT).show();
-                            }
-                        }).show();
-            }
-        });
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+
+        //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //setSupportActionBar(toolbar);
+
+        //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        //fab.setOnClickListener(new View.OnClickListener() {
+        //    @Override
+        //    public void onClick(View view) {
+        //        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_INDEFINITE)
+        //                .setAction("Action", new View.OnClickListener() {
+        //                    @Override
+        //                    public void onClick(View view) {
+        //                        Toast.makeText(MainActivity.this, "Has pulsado el Snackbar! :D", Toast.LENGTH_SHORT).show();
+        //                    }
+        //                }).show();
+        //    }
+        //});
+
+        //DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        //ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        //drawer.setDrawerListener(toggle);
+        //toggle.syncState();
+        //NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        //navigationView.setNavigationItemSelectedListener(this);
 
         // Obtenemos el fragment del mapa y nos notifica cuando el mapa esté disponible
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -79,7 +92,14 @@ public class MainActivity extends AppCompatActivity
         //Obtenemos el nick y lo mostramos
         Bundle bundle = getIntent().getExtras();
         String nick = bundle.getString("nick");
-        setTitle(R.string.app_name + " ("+nick+")");
+        TextView textViewNick = (TextView) findViewById(R.id.textView3);
+        Typeface face= Typeface.createFromAsset(getAssets(), "fonts/font.ttf");
+        textViewNick.setTypeface(face);
+        textViewNick.setText(nick);
+        //Connection.init(null);
+        //User u = new User(1,new double[]{4,5},10);
+        //Connection.postUser(u);
+
     }
 
     @Override
@@ -144,27 +164,40 @@ public class MainActivity extends AppCompatActivity
         //Modificamos botones de la interfaz
         mMap.getUiSettings().setIndoorLevelPickerEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(false);
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        //mMap.setMyLocationEnabled(true);
+        mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
+        mMap.getUiSettings().setAllGesturesEnabled(false);
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-        //Permitimos que se actualice la ubicacion
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Si no tenemos permisos, terminamos la app
-            //  Consider calling ActivityCompat#requestPermissions here to request the missing permissions, and then overriding public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
-            //  to handle the case where the user grants the permission. See the documentation for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        mMap.setMyLocationEnabled(true);
-
+        // Movemos camara a Barcelona
+        cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(41.417327, 2.207267))
+                .zoom(16)
+                .build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
     @Override
     public void onLocationChanged(Location location) {
+        //Movemos camara
+        cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(location.getLatitude(), location.getLongitude()))
+                .zoom(16)
+                .bearing(location.getBearing())
+                .build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+        //Movemos circulo
+        if (circle != null) {
+            circle.remove();
+        }
+        circle = mMap.addCircle(new CircleOptions()
+                .center(new LatLng(location.getLatitude(), location.getLongitude()))
+                .strokeWidth(3)
+                .strokeColor(Color.BLACK)
+                .fillColor(Color.YELLOW)
+                .radius(20));               //radio en metros
     }
 
     @Override
