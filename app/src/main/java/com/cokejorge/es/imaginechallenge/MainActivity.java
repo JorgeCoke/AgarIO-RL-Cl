@@ -4,23 +4,18 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -36,7 +31,6 @@ import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, LocationListener {
@@ -45,7 +39,9 @@ public class MainActivity extends AppCompatActivity
     LocationManager locationManager;
     CameraPosition cameraPosition;
     Circle circle = null;
-
+    Localizable u;
+    Localizable[] listaLocalizables;
+    Localizable[] listaColisiones;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +84,7 @@ public class MainActivity extends AppCompatActivity
             //  to handle the case where the user grants the permission. See the documentation for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);   //Iniciamos locationManager para recibir actualizaciones de ubicacion constantes
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);   //Iniciamos locationManager para recibir actualizaciones de ubicacion constantes
         //Obtenemos el nick y lo mostramos
         Bundle bundle = getIntent().getExtras();
         String nick = bundle.getString("nick");
@@ -96,10 +92,21 @@ public class MainActivity extends AppCompatActivity
         Typeface face= Typeface.createFromAsset(getAssets(), "fonts/font.ttf");
         textViewNick.setTypeface(face);
         textViewNick.setText(nick);
-        //Connection.init(null);
-        //User u = new User(1,new double[]{4,5},10);
-        //Connection.postUser(u);
 
+    }
+
+    @Override
+    protected void onResume() {
+        Connection.init(null);
+        u = new Localizable(10,new double[]{41.417327, 2.207267},"user");
+        Connection.postUser(u);
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        Connection.deleteUser();
+        super.onPause();
     }
 
     @Override
@@ -173,31 +180,87 @@ public class MainActivity extends AppCompatActivity
         // Movemos camara a Barcelona
         cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(41.417327, 2.207267))
-                .zoom(16)
+                .zoom(17)
                 .build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
     @Override
     public void onLocationChanged(Location location) {
+
+        //Limpiamos mapa
+        mMap.clear();
+
+        //Actualizamos user
+        u.setLocation(new double[]{location.getLatitude(), location.getLongitude()});
+        Connection.updateUser(u);
+
+        //Pintamos localizables
+        listaLocalizables = Connection.getUsers(location.getLatitude(),location.getLongitude(),200);
+        for (int i = 0; i< listaLocalizables.length; i++){
+            Log.e("TAG",listaLocalizables[i].toString());
+            if (listaLocalizables[i].getLocation()[0] != location.getLatitude()){
+                if(listaLocalizables[i].getType().equals("user")){
+                    mMap.addCircle(new CircleOptions()
+                            .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
+                            .strokeWidth(2)
+                            .strokeColor(Color.BLACK)
+                            .fillColor(Color.RED)
+                            .radius(listaLocalizables[i].getMass()));
+                }
+                else if (listaLocalizables[i].getType().equals("ball")){
+                    mMap.addCircle(new CircleOptions()
+                            .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
+                            .fillColor(Color.GREEN)
+                            .radius(5));
+                }
+                else if (listaLocalizables[i].getType().equals("bank")){
+                    mMap.addCircle(new CircleOptions()
+                            .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
+                            .strokeWidth(2)
+                            .strokeColor(Color.BLACK)
+                            .fillColor(Color.CYAN)
+                            .radius(20));
+                }
+
+            }
+        }
+
+        //Pintamos user
+        mMap.addCircle(new CircleOptions()
+                .center(new LatLng(location.getLatitude(), location.getLongitude()))
+                .strokeWidth(2)
+                .strokeColor(Color.BLACK)
+                .fillColor(Color.YELLOW)
+                .radius(u.getMass()));               //radio en metros
+
         //Movemos camara
         cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
-                .zoom(16)
+                .zoom(17)
                 .bearing(location.getBearing())
                 .build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
-        //Movemos circulo
-        if (circle != null) {
-            circle.remove();
+
+
+        //Miramos colisiones
+        listaColisiones = Connection.getUsers(location.getLatitude(),location.getLongitude(),u.getMass());
+        if (listaColisiones != null & listaColisiones.length != 0){
+            for (int i = 0; i< listaColisiones.length; i++){
+                if (listaColisiones[i].getType().equals("user")){
+                    //Toast.makeText(this, "colision con user", Toast.LENGTH_SHORT).show();
+                }
+                else if (listaColisiones[i].getType().equals("ball")){
+                    Connection.deleteBall(listaColisiones[i].getLocation()[0],listaColisiones[i].getLocation()[1]);
+                    u.setMass(u.getMass()+5);
+                }
+                else if (listaColisiones[i].getType().equals("bank")){
+                    //Toast.makeText(this, "colision con bank", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
-        circle = mMap.addCircle(new CircleOptions()
-                .center(new LatLng(location.getLatitude(), location.getLongitude()))
-                .strokeWidth(3)
-                .strokeColor(Color.BLACK)
-                .fillColor(Color.YELLOW)
-                .radius(20));               //radio en metros
+
     }
 
     @Override
