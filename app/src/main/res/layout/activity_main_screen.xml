@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main_screen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.cokejorge.es.imaginechallenge.MainScreen">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:srcCompat="@drawable/real_life_agario"
+        android:id="@+id/imageView2"
+        android:scaleType="fitXY"
+        />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:layout_above="@+id/button"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/editText"
+        android:textStyle="normal|bold"
+        android:textAlignment="center"
+        android:singleLine="true"
+        android:background="#BBFFFFFF"
+        android:textSize="30sp"
+        android:layout_marginBottom="10dp"
+        android:hint="Introduce Nick" />
+
+    <Button
+        android:text="   COMENZAR PARTIDA   "
+        android:background="@color/colorPrimaryDark"
+        android:textColor="@color/colorAccent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button"
+        android:textSize="18sp"
+        android:textStyle="normal|bold"
+        android:onClick="comenzarJuego"
+        android:layout_marginBottom="107dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+</RelativeLayout>

@@ -1,0 +1,43 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.3"
+    defaultConfig {
+        applicationId "com.cokejorge.es.imaginechallenge"
+        minSdkVersion 16
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/spring.schemas'
+        exclude 'META-INF/spring.handlers'
+        exclude 'META-INF/spring.tooling'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: '*.jar', exclude: 'android-support-*.jar')
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:design:24.2.1'
+    compile 'com.google.android.gms:play-services-maps:8.4.0'                   //Google Maps Services
+    compile 'com.google.android.gms:play-services-location:8.4.0'               //Google Location Service    compile 'com.android.support:design:24.2.1'
+    testCompile 'junit:junit:4.12'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.3.2'                 //TODO: Mirar a ver si es la ultima version Traductor JSON Jackson
+    compile ('org.springframework.hateoas:spring-hateoas:0.19.0.RELEASE') {     //TODO: Mirar a ver si es la ultima version Traductor datos recibidos del servidor JSON-HATEOAS
+        exclude module: 'spring-beans'
+    }
+}
