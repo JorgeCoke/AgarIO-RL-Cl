@@ -30,6 +30,7 @@ public class MainScreen extends AppCompatActivity {
         }
         Intent intent = new Intent(this,MainActivity.class);
         intent.putExtra("nick",nick);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(intent);
     }
 }

@@ -113,17 +113,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onPause() {
-        Connection.deleteUser();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        locationManager.removeUpdates(this);
-        super.onPause();
-        finish();
-    }
-
-    @Override
     protected void onDestroy() {
         Log.e("TAG", "EJECUTA ONDESTROY");
         super.onDestroy();
@@ -132,6 +121,8 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setBuildingsEnabled(false);
+        mMap.setIndoorEnabled(false);
         //Modificamos botones de la interfaz
         mMap.getUiSettings().setIndoorLevelPickerEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(false);
@@ -172,7 +163,7 @@ public class MainActivity extends AppCompatActivity
                 return;
             }
             locationManager.removeUpdates(this);
-            finish();
+            this.finish();
         }
 
         //Pintamos localizables
@@ -235,7 +226,7 @@ public class MainActivity extends AppCompatActivity
                             return;
                         }
                         locationManager.removeUpdates(this);
-                        finish();
+                        this.finish();
                     }
                     //Toast.makeText(this, "colision con user", Toast.LENGTH_SHORT).show();
                 }
@@ -250,22 +241,22 @@ public class MainActivity extends AppCompatActivity
             textViewScore.setText("Puntuacion: "+u.getMass());
         }
 
-//        listaColisiones = Connection.getUsers(location.getLatitude(), location.getLongitude(), u.getMass()*2);
-//        if (listaColisiones != null & listaColisiones.length != 0) {
-//            for (int i = 0; i < listaColisiones.length; i++) {
-//                if (listaColisiones[i].getType().equals("user")) {
-//                    if (listaColisiones[i].getMass() > u.getMass()*1.9) {
-//                        Toast.makeText(this, "Has sido eliminado. Puntuacion: " + u.getMass(), Toast.LENGTH_LONG).show();
-//                        Connection.deleteUser();
-//                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                            return;
-//                        }
-//                        locationManager.removeUpdates(this);
-//                        finish();
-//                    }
-//                }
-//            }
-//        }
+        listaColisiones = Connection.getUsers(location.getLatitude(), location.getLongitude(), u.getMass()*2);
+        if (listaColisiones != null & listaColisiones.length != 0) {
+            for (int i = 0; i < listaColisiones.length; i++) {
+                if (listaColisiones[i].getType().equals("user")) {
+                    if (listaColisiones[i].getMass() > u.getMass()*1.9) {
+                        Toast.makeText(this, "Has sido eliminado. Puntuacion: " + u.getMass(), Toast.LENGTH_LONG).show();
+                        Connection.deleteUser();
+                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                        locationManager.removeUpdates(this);
+                        this.finish();
+                    }
+                }
+            }
+        }
 
         //Pintamos linea a banco mas popular
         Localizable bank = Connection.getBank();

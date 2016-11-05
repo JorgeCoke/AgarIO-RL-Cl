@@ -23,7 +23,7 @@ import java.util.Collections;
 public class Connection {
 
     //TODO: LANZA EL SERVIDOR E INSERTA LA URL AQUI (terminado en "/"):
-    public static String url = "http://192.168.3.30:8080/";
+    public static String url = "http://52.28.76.182:8080/";
 
     public static RestTemplate rest;
     public static URI uri;
