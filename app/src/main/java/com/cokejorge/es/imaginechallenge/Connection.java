@@ -23,7 +23,7 @@ import java.util.Collections;
 public class Connection {
 
     //TODO: LANZA EL SERVIDOR E INSERTA LA URL AQUI (terminado en "/"):
-    public static String url = "http://192.168.2.226:8080/";
+    public static String url = "http://192.168.3.30:8080/";
 
     public static RestTemplate rest;
     public static URI uri;
@@ -62,16 +62,11 @@ public class Connection {
     }
 
     public static void deleteBall(double lat, double lon){
-        rest.delete(url+"deleteBall?lat="+lat+"&lon="+lon, Localizable[].class);
+        rest.delete(url+"location/"+lat+"/"+lon+"/", Localizable.class);
     }
 
     public static void updateUser(Localizable u) throws RestClientException{
-        try{
             rest.put(uri,u);
-        }
-        catch (IllegalArgumentException ex){
-            Log.e("DEVELOP", "Exception IllegalArgument al postUser: " + ex);
-        }
     }
 
     public static Localizable[] getUsers(double lat, double lon, double radio){
@@ -92,6 +87,16 @@ public class Connection {
             Log.e("DEVELOP", "Exception al getBalls: " + ex);
         }
         return new Ball[0];
+    }
+
+    public static Localizable getBank(){
+        try{
+            return rest.getForObject(url+"location/bestBank", Localizable.class);
+            //return new Localizable[0];
+        }catch (RestClientException ex){
+            Log.e("DEVELOP", "Exception al getUsers: " + ex);
+        }
+        return new Localizable();
     }
 
 }

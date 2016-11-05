@@ -31,9 +31,21 @@ import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, LocationListener {
+        implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
     LocationManager locationManager;
@@ -42,6 +54,9 @@ public class MainActivity extends AppCompatActivity
     Localizable u;
     Localizable[] listaLocalizables;
     Localizable[] listaColisiones;
+    TextView textViewNick;
+    TextView textViewScore;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,81 +103,30 @@ public class MainActivity extends AppCompatActivity
         //Obtenemos el nick y lo mostramos
         Bundle bundle = getIntent().getExtras();
         String nick = bundle.getString("nick");
-        TextView textViewNick = (TextView) findViewById(R.id.textView3);
-        Typeface face= Typeface.createFromAsset(getAssets(), "fonts/font.ttf");
+        textViewNick = (TextView) findViewById(R.id.textView3);
+        Typeface face = Typeface.createFromAsset(getAssets(), "fonts/font.ttf");
         textViewNick.setTypeface(face);
         textViewNick.setText(nick);
 
-    }
+        textViewScore = (TextView) findViewById(R.id.textView2);
 
-    @Override
-    protected void onResume() {
-        Connection.init(null);
-        u = new Localizable(10,new double[]{41.417327, 2.207267},"user");
-        Connection.postUser(u);
-        super.onResume();
     }
 
     @Override
     protected void onPause() {
         Connection.deleteUser();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        locationManager.removeUpdates(this);
         super.onPause();
+        finish();
     }
 
     @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-        //Iniciamos intent
-        Intent intent = null;
-
-        if (id == R.id.seleccionable1) {
-            // Handle the camera action
-        } else if (id == R.id.menu1) {
-            intent = new Intent(this, Menu1.class);
-        } else if (id == R.id.menu2) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        if (intent != null) {
-            startActivity(intent);
-        }
-        return true;
+    protected void onDestroy() {
+        Log.e("TAG", "EJECUTA ONDESTROY");
+        super.onDestroy();
     }
 
     @Override
@@ -172,6 +136,7 @@ public class MainActivity extends AppCompatActivity
         mMap.getUiSettings().setIndoorLevelPickerEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(false);
         mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         //mMap.setMyLocationEnabled(true);
         mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
@@ -181,8 +146,13 @@ public class MainActivity extends AppCompatActivity
         cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(41.417327, 2.207267))
                 .zoom(17)
+                .bearing(0)
                 .build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+        Connection.init(null);
+        u = new Localizable(10, new double[]{41.417327, 2.207267}, "user");
+        Connection.postUser(u);
     }
 
     @Override
@@ -193,34 +163,41 @@ public class MainActivity extends AppCompatActivity
 
         //Actualizamos user
         u.setLocation(new double[]{location.getLatitude(), location.getLongitude()});
-        Connection.updateUser(u);
+        try{
+            Connection.updateUser(u);
+        }
+        catch (Exception e){
+            Connection.deleteUser();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            locationManager.removeUpdates(this);
+            finish();
+        }
 
         //Pintamos localizables
-        listaLocalizables = Connection.getUsers(location.getLatitude(),location.getLongitude(),200);
-        for (int i = 0; i< listaLocalizables.length; i++){
-            Log.e("TAG",listaLocalizables[i].toString());
-            if (listaLocalizables[i].getLocation()[0] != location.getLatitude()){
-                if(listaLocalizables[i].getType().equals("user")){
+        listaLocalizables = Connection.getUsers(location.getLatitude(), location.getLongitude(), 250);
+        for (int i = 0; i < listaLocalizables.length; i++) {
+            if (listaLocalizables[i].getLocation()[0] != location.getLatitude()) {
+                if (listaLocalizables[i].getType().equals("user")) {
                     mMap.addCircle(new CircleOptions()
                             .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
                             .strokeWidth(2)
                             .strokeColor(Color.BLACK)
-                            .fillColor(Color.RED)
+                            .fillColor(Color.rgb(244, 86, 66))
                             .radius(listaLocalizables[i].getMass()));
-                }
-                else if (listaLocalizables[i].getType().equals("ball")){
+                } else if (listaLocalizables[i].getType().equals("ball")) {
                     mMap.addCircle(new CircleOptions()
                             .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
-                            .fillColor(Color.GREEN)
+                            .fillColor(Color.rgb(128, 244, 66))
                             .radius(5));
-                }
-                else if (listaLocalizables[i].getType().equals("bank")){
+                } else if (listaLocalizables[i].getType().equals("bank")) {
                     mMap.addCircle(new CircleOptions()
                             .center(new LatLng(listaLocalizables[i].getLocation()[0], listaLocalizables[i].getLocation()[1]))
                             .strokeWidth(2)
                             .strokeColor(Color.BLACK)
-                            .fillColor(Color.CYAN)
-                            .radius(20));
+                            .fillColor(Color.argb(120,197, 66, 244))
+                            .radius(30));
                 }
 
             }
@@ -231,24 +208,35 @@ public class MainActivity extends AppCompatActivity
                 .center(new LatLng(location.getLatitude(), location.getLongitude()))
                 .strokeWidth(2)
                 .strokeColor(Color.BLACK)
-                .fillColor(Color.YELLOW)
+                .fillColor(Color.rgb(244, 206, 66))
                 .radius(u.getMass()));               //radio en metros
 
         //Movemos camara
         cameraPosition = new CameraPosition.Builder()
                 .target(new LatLng(location.getLatitude(), location.getLongitude()))
                 .zoom(17)
-                .bearing(location.getBearing())
+                .bearing(0)
                 .build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
 
-
         //Miramos colisiones
-        listaColisiones = Connection.getUsers(location.getLatitude(),location.getLongitude(),u.getMass());
-        if (listaColisiones != null & listaColisiones.length != 0){
-            for (int i = 0; i< listaColisiones.length; i++){
-                if (listaColisiones[i].getType().equals("user")){
+        listaColisiones = Connection.getUsers(location.getLatitude(), location.getLongitude(), u.getMass());
+        if (listaColisiones != null & listaColisiones.length != 0) {
+            for (int i = 0; i < listaColisiones.length; i++) {
+                if (listaColisiones[i].getType().equals("user")) {
+                    if (listaColisiones[i].getMass() < u.getMass()) {
+                        Connection.deleteBall(listaColisiones[i].getLocation()[0], listaColisiones[i].getLocation()[1]);
+                        u.setMass(u.getMass() + listaColisiones[i].getMass());
+                    } else if (listaColisiones[i].getMass() > u.getMass()) {
+                        Toast.makeText(this, "Has sido eliminado. Puntuacion: " + u.getMass(), Toast.LENGTH_LONG).show();
+                        Connection.deleteUser();
+                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                        locationManager.removeUpdates(this);
+                        finish();
+                    }
                     //Toast.makeText(this, "colision con user", Toast.LENGTH_SHORT).show();
                 }
                 else if (listaColisiones[i].getType().equals("ball")){
@@ -259,27 +247,56 @@ public class MainActivity extends AppCompatActivity
                     //Toast.makeText(this, "colision con bank", Toast.LENGTH_SHORT).show();
                 }
             }
+            textViewScore.setText("Puntuacion: "+u.getMass());
         }
+
+//        listaColisiones = Connection.getUsers(location.getLatitude(), location.getLongitude(), u.getMass()*2);
+//        if (listaColisiones != null & listaColisiones.length != 0) {
+//            for (int i = 0; i < listaColisiones.length; i++) {
+//                if (listaColisiones[i].getType().equals("user")) {
+//                    if (listaColisiones[i].getMass() > u.getMass()*1.9) {
+//                        Toast.makeText(this, "Has sido eliminado. Puntuacion: " + u.getMass(), Toast.LENGTH_LONG).show();
+//                        Connection.deleteUser();
+//                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                            return;
+//                        }
+//                        locationManager.removeUpdates(this);
+//                        finish();
+//                    }
+//                }
+//            }
+//        }
+
+        //Pintamos linea a banco mas popular
+        Localizable bank = Connection.getBank();
+        PolylineOptions options = new PolylineOptions();
+        options.color( Color.parseColor( "#CC0000FF" ) );
+        options.width( 5 );
+        options.visible( true );
+        options.add(new LatLng(bank.getLocation()[0], bank.getLocation()[1]));
+        options.add(new LatLng(u.getLocation()[0], u.getLocation()[1]));
+        mMap.addPolyline(options);
 
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        Toast.makeText(this, "Estado alterado: " + provider, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Estado alterado: " + provider, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-        Toast.makeText(this, "Proveedor Activo: " + provider, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Proveedor Activo: " + provider, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        Toast.makeText(getApplicationContext(), "Proveedor Desactivado: " + provider, Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), "Proveedor Desactivado: " + provider, Toast.LENGTH_LONG).show();
         //Terminamos app
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "No tengo permisos", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        //    Toast.makeText(this, "No tengo permisos", Toast.LENGTH_SHORT).show();
+        //    return;
+        //}
     }
+
 }
