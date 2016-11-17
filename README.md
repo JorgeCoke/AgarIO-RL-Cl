@@ -8,4 +8,4 @@
 
 ***Youtube video: *** https://www.youtube.com/watch?v=U1Qd3jJKEjw
 
-***Slides: *** goo.gl/M0hBNd
+***Slides: *** https://goo.gl/M0hBNd
